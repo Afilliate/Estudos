@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plano Inclinado — Prof. ITA</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+    --peso: #f85149;
+    --normal: #3fb950;
+    --atrito: #d29922;
+    --componente: #a371f7;
+    --velocidade: #79c0ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 20px;
+    line-height: 1.6;
+  }
+  header {
+    max-width: 1280px;
+    margin: 0 auto 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+  header h1 span { color: var(--accent); }
+  header p { color: var(--muted); font-size: 13px; }
+  .grid {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 20px;
+  }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .panel h2 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: #0a0d12;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  .controls { display: flex; flex-direction: column; gap: 14px; }
+  .control-group { display: flex; flex-direction: column; gap: 6px; }
+  .control-group label {
+    font-size: 13px; color: var(--muted);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .control-group label b {
+    color: var(--text); font-family: "Courier New", monospace; font-size: 14px;
+  }
+  input[type="range"] { width: 100%; accent-color: var(--accent); }
+  .force-list { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+  .force-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; background: var(--bg); border-radius: 6px; font-size: 13px;
+  }
+  .force-item .color { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+  .force-item .name { flex: 1; color: var(--muted); }
+  .force-item .value { font-family: "Courier New", monospace; font-size: 13px; color: var(--text); }
+  .formula-box {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; padding: 12px; margin-top: 8px;
+  }
+  .formula-box .formula {
+    font-family: "Courier New", monospace; font-size: 14px;
+    color: var(--accent); margin-bottom: 6px;
+  }
+  .formula-box .desc { font-size: 12px; color: var(--muted); }
+  button.primary {
+    width: 100%; padding: 10px; background: var(--accent); color: #0d1117;
+    border: none; border-radius: 6px; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: opacity 0.15s;
+  }
+  button.primary:hover { opacity: 0.85; }
+  .btn-row { display: flex; gap: 8px; }
+  .btn-row button { flex: 1; }
+  .status {
+    font-size: 12px; color: var(--muted); text-align: center;
+    padding: 6px; font-family: "Courier New", monospace;
+  }
+
+  /* ── ESTILOS DA EXPLICAÇÃO EXPANDIDA ── */
+  .lesson {
+    max-width: 1280px;
+    margin: 20px auto 0;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 32px 40px;
+  }
+  @media (max-width: 900px) { .lesson { padding: 20px; } }
+  .lesson h2 {
+    font-size: 18px; font-weight: 600; color: var(--text);
+    margin: 28px 0 12px; padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .lesson h2:first-child { margin-top: 0; }
+  .lesson h3 {
+    font-size: 15px; font-weight: 600; color: var(--accent);
+    margin: 20px 0 8px;
+  }
+  .lesson p {
+    font-size: 14px; color: var(--text); margin-bottom: 12px;
+    line-height: 1.7;
+  }
+  .lesson p.muted { color: var(--muted); font-size: 13px; }
+  .lesson ul, .lesson ol {
+    margin: 8px 0 16px 24px; font-size: 14px; line-height: 1.7;
+  }
+  .lesson li { margin-bottom: 6px; }
+  .lesson strong { color: var(--text); font-weight: 600; }
+  .lesson em { color: var(--accent); font-style: normal; }
+  .lesson .formula {
+    display: block; background: var(--bg);
+    border-left: 3px solid var(--accent);
+    padding: 12px 16px; margin: 12px 0;
+    font-family: "Courier New", monospace; font-size: 15px;
+    color: var(--accent); border-radius: 0 6px 6px 0;
+  }
+  .lesson .callout {
+    background: var(--bg); border: 1px solid var(--border);
+    border-left: 3px solid var(--atrito);
+    padding: 14px 18px; margin: 16px 0; border-radius: 0 6px 6px 0;
+    font-size: 13px; color: var(--text);
+  }
+  .lesson .callout-title {
+    font-weight: 600; color: var(--atrito); margin-bottom: 6px;
+    font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .lesson .callout.danger { border-left-color: var(--peso); }
+  .lesson .callout.danger .callout-title { color: var(--peso); }
+  .lesson .callout.ok { border-left-color: var(--normal); }
+  .lesson .callout.ok .callout-title { color: var(--normal); }
+  .lesson .callout.info { border-left-color: var(--accent); }
+  .lesson .callout.info .callout-title { color: var(--accent); }
+
+  .demo-triangle {
+    display: block; margin: 20px auto;
+    background: var(--bg); border-radius: 8px;
+    border: 1px solid var(--border); padding: 16px;
+  }
+  .two-col {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+  }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+
+  table.comparison {
+    width: 100%; border-collapse: collapse; margin: 16px 0;
+    font-size: 13px;
+  }
+  table.comparison th, table.comparison td {
+    border: 1px solid var(--border);
+    padding: 10px 12px; text-align: left;
+  }
+  table.comparison th {
+    background: var(--bg); color: var(--muted);
+    font-weight: 600; font-size: 12px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  table.comparison td { color: var(--text); }
+  table.comparison code {
+    font-family: "Courier New", monospace;
+    color: var(--accent); font-size: 13px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Plano Inclinado <span>— Visualização + Aula Completa</span></h1>
+  <p>Simulação interativa com decomposição vetorial em tempo real, seguida de aula profunda sobre a física do plano inclinado.</p>
+</header>
+
+<div class="grid">
+  <div class="panel">
+    <h2>Simulação</h2>
+    <canvas id="canvas" width="800" height="500"></canvas>
+    <div class="status" id="status">Pronto. Ajuste o ângulo ou inicie a simulação.</div>
+  </div>
+
+  <div class="panel">
+    <h2>Controles</h2>
+    <div class="controls">
+      <div class="control-group">
+        <label>Ângulo do plano (θ) <b id="angleVal">30°</b></label>
+        <input type="range" id="angle" min="0" max="80" value="30" step="1">
+      </div>
+      <div class="control-group">
+        <label>Massa (m) <b id="massVal">2,0 kg</b></label>
+        <input type="range" id="mass" min="1" max="10" value="2" step="0.5">
+      </div>
+      <div class="control-group">
+        <label>Coef. de atrito (μ) <b id="muVal">0,00</b></label>
+        <input type="range" id="mu" min="0" max="1" value="0" step="0.05">
+      </div>
+      <div class="control-group">
+        <label>Velocidade inicial (v₀) <b id="v0Val">0,0 m/s</b></label>
+        <input type="range" id="v0" min="0" max="10" value="0" step="0.5">
+      </div>
+      <div class="btn-row">
+        <button class="primary" id="playBtn">▶ Iniciar</button>
+        <button class="primary" id="resetBtn" style="background: var(--border); color: var(--text);">↺ Resetar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" style="grid-column: 1 / -1;">
+    <h2>Forças Atuantes (valores em tempo real)</h2>
+    <div class="force-list" id="forceList"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Fórmulas do Movimento (dinâmicas)</h2>
+    <div class="formula-box">
+      <div class="formula" id="formulaA">a = g · sen θ</div>
+      <div class="desc" id="formulaDesc">Plano inclinado sem atrito.</div>
+    </div>
+    <div class="formula-box">
+      <div class="formula" id="formulaN">N = m · g · cos θ</div>
+      <div class="desc">Força normal (perpendicular ao plano).</div>
+    </div>
+    <div class="formula-box">
+      <div class="formula" id="formulaFat">f<sub>at</sub> = μ · N</div>
+      <div class="desc">Força de atrito cinético (oposta ao movimento).</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Como Usar Esta Página</h2>
+    <div style="font-size:13px;color:var(--muted);line-height:1.7;">
+      <p style="margin-bottom:10px;"><strong style="color:var(--text);">1.</strong> Comece com μ = 0 e θ = 30°. Observe a decomposição do peso (Px em roxo, Py em roxo).</p>
+      <p style="margin-bottom:10px;"><strong style="color:var(--text);">2.</strong> Aumente θ para 60°. Veja Px aumentar e Py diminuir. A aceleração cresce.</p>
+      <p style="margin-bottom:10px;"><strong style="color:var(--text);">3.</strong> Aumente μ para 0,5. Veja o atrito aparecer em amarelo. Se tan θ ≤ μ, o bloco não desce.</p>
+      <p><strong style="color:var(--text);">4.</strong> Clique em <em>Iniciar</em> para ver o movimento simulado com a física correta.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- AULA COMPLETA EXPANDIDA                                      -->
+<!-- ════════════════════════════════════════════════════════════ -->
+
+<div class="lesson">
+
+  <h2>1. O Problema Físico</h2>
+
+  <p>Imagine um bloco de massa <strong>m</strong> apoiado sobre uma rampa que forma um ângulo <strong>θ</strong> com a horizontal. O bloco está livre para deslizar. A pergunta fundamental é: <em>qual a aceleração do bloco?</em></p>
+
+  <p>À primeira vista, parece simples: o bloco desce porque o peso puxa. Mas <strong>o peso é vertical</strong>, e o bloco se move ao longo do plano inclinado — que não é vertical. Existe um descompasso entre a direção da força (peso) e a direção do movimento (ao longo do plano). Esse descompasso é o coração do problema.</p>
+
+  <p>A resposta do ITA quase nunca é "o bloco desce com aceleração g". A banca quer que você entenda <strong>por que a aceleração é menor que g</strong>, e como calcular exatamente quanto é.</p>
+
+  <h2>2. O Peso e a Decomposição Vetorial</h2>
+
+  <h3>2.1. O que é o peso?</h3>
+
+  <p>O peso é uma força <strong>vertical</strong>, apontando para o centro da Terra. Módulo:</p>
+
+  <span class="formula">P = m · g</span>
+
+  <p>Ele não é paralelo ao plano inclinado. Ele forma um ângulo <strong>θ</strong> com a perpendicular ao plano. Para entender isso, imagine o plano inclinado de ângulo θ. A perpendicular ao plano (a normal) também está inclinada de θ em relação à vertical. Portanto, o ângulo entre o peso (vertical) e a perpendicular ao plano é <strong>θ</strong>.</p>
+
+  <h3>2.2. Por que decompor?</h3>
+
+  <p>Como o bloco se move <strong>ao longo do plano</strong>, é conveniente usar um sistema de eixos alinhado com o movimento:</p>
+  <ul>
+    <li><strong>Eixo x:</strong> paralelo ao plano (positivo subindo, por convenção)</li>
+    <li><strong>Eixo y:</strong> perpendicular ao plano (positivo para fora do plano)</li>
+  </ul>
+
+  <p>Nesse sistema, o peso não é mais vertical — ele tem componentes <strong>x</strong> e <strong>y</strong>. Precisamos decompor.</p>
+
+  <h3>2.3. Demonstração geométrica da decomposição</h3>
+
+  <p>Considere o triângulo retângulo formado por:</p>
+  <ul>
+    <li><strong>Hipotenusa:</strong> o peso <strong>P = mg</strong> (vertical, apontando para baixo)</li>
+    <li><strong>Cateto oposto a θ:</strong> componente paralela ao plano <strong>Px</strong></li>
+    <li><strong>Cateto adjacente a θ:</strong> componente perpendicular ao plano <strong>Py</strong></li>
+  </ul>
+
+  <p>Por definição de seno e cosseno em um triângulo retângulo:</p>
+
+  <span class="formula">Px = P · sen θ = m · g · sen θ</span>
+  <span class="formula">Py = P · cos θ = m · g · cos θ</span>
+
+  <svg class="demo-triangle" width="500" height="300" viewBox="0 0 500 300">
+    <!-- Fundo -->
+    <rect x="0" y="0" width="500" height="300" fill="#0a0d12"/>
+    
+    <!-- Triângulo do plano inclinado -->
+    <polygon points="50,250 400,250 400,100" fill="#1a1f29" stroke="#58a6ff" stroke-width="2"/>
+    
+    <!-- Linha vertical (altura) -->
+    <line x1="400" y1="250" x2="400" y2="100" stroke="#30363d" stroke-width="1.5" stroke-dasharray="5,3"/>
+    
+    <!-- Ângulo theta -->
+    <path d="M 100 250 A 50 50 0 0 0 82 222" fill="none" stroke="#79c0ff" stroke-width="2"/>
+    <text x="105" y="235" fill="#79c0ff" font-family="Courier New" font-size="16">θ</text>
+    
+    <!-- Peso (vertical para baixo) -->
+    <line x1="250" y1="150" x2="250" y2="270" stroke="#f85149" stroke-width="2.5" marker-end="url(#arrowRed)"/>
+    <text x="258" y="265" fill="#f85149" font-family="Courier New" font-size="14" font-weight="bold">P = mg</text>
+    
+    <!-- Decomposição em Px e Py -->
+    <!-- Linha do plano -->
+    <line x1="150" y1="185" x2="350" y2="150" stroke="#a371f7" stroke-width="2" marker-end="url(#arrowPurple)"/>
+    <text x="355" y="150" fill="#a371f7" font-family="Courier New" font-size="14" font-weight="bold">Px = mg·senθ</text>
+    
+    <!-- Perpendicular ao plano -->
+    <line x1="250" y1="170" x2="180" y2="195" stroke="#a371f7" stroke-width="2" marker-end="url(#arrowPurple)"/>
+    <text x="130" y="210" fill="#a371f7" font-family="Courier New" font-size="14" font-weight="bold">Py = mg·cosθ</text>
+    
+    <!-- Ângulo entre P e Py -->
+    <text x="270" y="195" fill="#8b949e" font-family="Courier New" font-size="12">θ</text>
+    
+    <!-- Definições dos marcadores -->
+    <defs>
+      <marker id="arrowRed" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+        <path d="M0,0 L0,6 L9,3 z" fill="#f85149"/>
+      </marker>
+      <marker id="arrowPurple" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+        <path d="M0,0 L0,6 L9,3 z" fill="#a371f7"/>
+      </marker>
+    </defs>
+  </svg>
+
+  <div class="callout info">
+    <div class="callout-title">Por que o ângulo entre P e Py é θ?</div>
+    <p>Porque o peso é vertical e Py é perpendicular ao plano. O ângulo entre a vertical e a perpendicular ao plano é igual ao ângulo entre o plano e a horizontal — que é θ. Esse é o mesmo raciocínio de "ângulos alternos internos" da geometria plana.</p>
+  </div>
+
+  <h2>3. As Forças que Atuam no Bloco</h2>
+
+  <p>Sobre o bloco, atuam <strong>três forças</strong> (quando há atrito):</p>
+
+  <ol>
+    <li><strong>Peso (P):</strong> vertical, para baixo. Decomposto em Px e Py.</li>
+    <li><strong>Normal (N):</strong> perpendicular ao plano, para fora. É a reação do plano à compressão do bloco.</li>
+    <li><strong>Atrito (fat):</strong> paralelo ao plano, oposto ao movimento (ou à tendência de movimento).</li>
+  </ol>
+
+  <p>Ponto crucial: <strong>a normal N não é igual ao peso.</strong> Ela equilibra apenas a componente perpendicular do peso.</p>
+
+  <span class="formula">N = Py = m · g · cos θ</span>
+
+  <p>Essa é a primeira armadilha que o ITA explora: o candidato desatento assume N = mg. Errado. Em plano inclinado, N &lt; mg.</p>
+
+  <div class="callout danger">
+    <div class="callout-title">Erro clássico</div>
+    <p>Assumir que <strong>N = mg</strong> em qualquer situação. Em plano inclinado, N = mg·cosθ. Se θ = 60°, N = 0,5·mg. Se o candidato usa N = mg, o cálculo do atrito fica errado — e a questão inteira desanda.</p>
+  </div>
+
+  <h2>4. Aplicação da Segunda Lei de Newton</h2>
+
+  <h3>4.1. Direção perpendicular ao plano (eixo y)</h3>
+
+  <p>O bloco não se move perpendicularmente ao plano. Logo, a resultante nessa direção é nula:</p>
+
+  <span class="formula">N − Py = 0 ⟹ N = m · g · cos θ</span>
+
+  <h3>4.2. Direção paralela ao plano (eixo x)</h3>
+
+  <p>Agora sim: o bloco acelera. A resultante na direção paralela é:</p>
+
+  <span class="formula">Px = m · a ⟹ m · g · sen θ = m · a ⟹ a = g · sen θ</span>
+
+  <p>A massa cancela. Isso é importante: <strong>a aceleração em plano inclinado sem atrito não depende da massa</strong>. Uma bola de gude e um caminhão descem com a mesma aceleração (ignorando atrito).</p>
+
+  <div class="callout ok">
+    <div class="callout-title">Intuição</div>
+    <p>Quanto maior o ângulo θ, maior a componente Px e maior a aceleração. Se θ = 0 (plano horizontal), a = 0. Se θ = 90° (queda livre), a = g. Faz sentido: o plano inclinado é uma "queda livre amortecida" pelo ângulo.</p>
+  </div>
+
+  <h2>5. O Papel do Atrito</h2>
+
+  <h3>5.1. Atrito cinético</h3>
+
+  <p>Quando o bloco se move, o atrito cinético atua. Módulo:</p>
+
+  <span class="formula">fat = μ · N = μ · m · g · cos θ</span>
+
+  <p>Ele se opõe ao movimento. Portanto, dependendo do sentido do movimento, ele soma ou subtrai à componente Px.</p>
+
+  <h3>5.2. Descida com atrito</h3>
+
+  <p>Bloco descendo: peso (Px) aponta para baixo do plano; atrito aponta para cima (opõe ao movimento). Resultante:</p>
+
+  <span class="formula">m · a = Px − fat = m · g · sen θ − μ · m · g · cos θ</span>
+  <span class="formula">a = g · (sen θ − μ · cos θ)</span>
+
+  <h3>5.3. Subida com atrito</h3>
+
+  <p>Bloco subindo: peso (Px) aponta para baixo do plano; atrito também aponta para baixo (opõe à subida). Resultante:</p>
+
+  <span class="formula">m · a = −Px − fat = −m · g · sen θ − μ · m · g · cos θ</span>
+  <span class="formula">a = −g · (sen θ + μ · cos θ)</span>
+
+  <p>Ou seja, na subida, a desaceleração é <strong>maior</strong> que na descida. O atrito sempre ajuda a frear, nunca a acelerar.</p>
+
+  <h3>5.4. Condição de movimento</h3>
+
+  <p>O bloco só desce se a componente Px for maior que o atrito máximo:</p>
+
+  <span class="formula">m · g · sen θ > μ · m · g · cos θ ⟹ tan θ > μ</span>
+
+  <p>Se tan θ ≤ μ, o bloco fica parado. O atrito estático segura. Esse é outro ponto que o ITA cobra: <strong>nem todo plano inclinado faz o bloco descer</strong>. Depende do ângulo e do atrito.</p>
+
+  <div class="callout danger">
+    <div class="callout-title">Erro clássico #2</div>
+    <p>Achar que o bloco sempre desce. Se μ ≥ tan θ, o bloco permanece em repouso. A banca coloca isso em questões de múltipla escolha para pegar candidatos desatentos.</p>
+  </div>
+
+  <h2>6. Casos Limite — Verificação da Intuição</h2>
+
+  <table class="comparison">
+    <thead>
+      <tr>
+        <th>Situação</th>
+        <th>Ângulo</th>
+        <th>Aceleração</th>
+        <th>Interpretação</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Plano horizontal</td>
+        <td><code>θ = 0°</code></td>
+        <td><code>a = 0</code></td>
+        <td>O peso é totalmente equilibrado pela normal. Nada se move.</td>
+      </tr>
+      <tr>
+        <td>Plano suave</td>
+        <td><code>θ = 30°</code></td>
+        <td><code>a = 0,5·g</code></td>
+        <td>Metade da gravidade. Px = mg·sen30° = 0,5·mg.</td>
+      </tr>
+      <tr>
+        <td>Plano íngreme</td>
+        <td><code>θ = 60°</code></td>
+        <td><code>a = 0,87·g</code></td>
+        <td>Quase queda livre. Px = mg·sen60° ≈ 0,87·mg.</td>
+      </tr>
+      <tr>
+        <td>Queda livre</td>
+        <td><code>θ = 90°</code></td>
+        <td><code>a = g</code></td>
+        <td>O plano é vertical. Não há normal, não há atrito. Só peso.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>7. Conexão com Outros Tópicos do ITA</h2>
+
+  <p>Plano inclinado não é um tópico isolado. Ele aparece combinado com:</p>
+
+  <ul>
+    <li><strong>Energia:</strong> o trabalho da gravidade em um plano inclinado é m·g·h, independente do caminho. A componente Px realiza trabalho m·g·senθ·d, que é igual a m·g·h (porque h = d·senθ).</li>
+    <li><strong>Quantidade de movimento:</strong> colisões em planos inclinados. O atrito dissipa energia, mas o impulso da normal e do peso alteram a quantidade de movimento.</li>
+    <li><strong>Dinâmica circular:</strong> planos inclinados em curvas (ex: pista de corrida inclinada) combinam normal e atrito para fornecer a força centrípeta.</li>
+    <li><strong>Sistemas de corpos ligados:</strong> dois blocos em planos inclinados diferentes, ligados por fio e polia. A aceleração do sistema depende das massas e dos ângulos.</li>
+    <li><strong>Hidrostática:</strong> empuxo em planos inclinados (ex: corpo submerso em um líquido dentro de um recipiente inclinado).</li>
+  </ul>
+
+  <h2>8. Estratégia de Resolução — Passo a Passo</h2>
+
+  <p>Para qualquer questão de plano inclinado do ITA:</p>
+
+  <ol>
+    <li><strong>Desenhe o diagrama de forças.</strong> Identifique todas as forças: peso, normal, atrito, tração, empuxo, etc.</li>
+    <li><strong>Escolha os eixos.</strong> Eixo x paralelo ao plano (direção do movimento), eixo y perpendicular.</li>
+    <li><strong>Decomponha as forças</strong> que não estão alinhadas com os eixos. Especialmente o peso.</li>
+    <li><strong>Aplique a 2ª Lei de Newton</strong> em cada direção separadamente.</li>
+    <li><strong>Verifique a condição de movimento</strong> se houver atrito estático: tan θ > μ?</li>
+    <li><strong>Resolva o sistema</strong> de equações para a incógnita pedida.</li>
+    <li><strong>Verifique casos limite:</strong> θ = 0 dá o resultado esperado? θ = 90° dá queda livre? Se não, há erro.</li>
+  </ol>
+
+  <div class="callout info">
+    <div class="callout-title">Bizu ITA</div>
+    <p>Sempre que a questão envolver plano inclinado com atrito e pedir "a partir de que ângulo o bloco desce", a resposta é <strong>tan θ > μ</strong>. Memorize. Aparece quase todo ano.</p>
+  </div>
+
+  <h2>9. Erros Mais Comuns (O Que o ITA Explora)</h2>
+
+  <table class="comparison">
+    <thead>
+      <tr>
+        <th>Erro</th>
+        <th>Por que está errado</th>
+        <th>Correção</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Assumir <code>N = mg</code></td>
+        <td>A normal só equilibra a componente perpendicular do peso</td>
+        <td><code>N = mg·cos θ</code></td>
+      </tr>
+      <tr>
+        <td>Assumir <code>a = g</code></td>
+        <td>O bloco não está em queda livre; só a componente Px acelera</td>
+        <td><code>a = g·sen θ</code></td>
+      </tr>
+      <tr>
+        <td>Esquecer o atrito na subida</td>
+        <td>Na subida, peso e atrito apontam para o mesmo sentido</td>
+        <td><code>a = −g·(sen θ + μ·cos θ)</code></td>
+      </tr>
+      <tr>
+        <td>Achar que o bloco sempre desce</td>
+        <td>Se μ ≥ tan θ, o atrito estático segura</td>
+        <td>Verificar <code>tan θ > μ</code></td>
+      </tr>
+      <tr>
+        <td>Confundir atrito estático com cinético</td>
+        <td>São coeficientes diferentes, e o estático pode ser maior</td>
+        <td>Usar μ<sub>e</sub> quando parado, μ<sub>c</sub> quando em movimento</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>10. Síntese Final</h2>
+
+  <p>O plano inclinado é o problema mais importante da Dinâmica no ITA. Ele combina:</p>
+
+  <ul>
+    <li><strong>Decomposição vetorial</strong> (habilidade básica)</li>
+    <li><strong>Leis de Newton</strong> (conceito central)</li>
+    <li><strong>Atrito</strong> (força dependente da normal, que depende do ângulo)</li>
+    <li><strong>Condições de movimento</strong> (tan θ vs μ)</li>
+    <li><strong>Conexões</strong> com energia, QDM e sistemas ligados</li>
+  </ul>
+
+  <p>Se você domina plano inclinado, você domina a base de 30% das questões de Dinâmica do ITA. Se você não domina, todo o resto desanda.</p>
+
+  <p>A simulação acima mostra tudo isso em tempo real. Use-a para construir a intuição antes de resolver questões. Depois, feche-a e resolva os exercícios no papel.</p>
+
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const status = document.getElementById('status');
+
+const state = {
+  angle: 30, mass: 2, mu: 0, v0: 0,
+  playing: false, t: 0, s: 0, v: 0,
+  lastTime: 0, rafId: null, dir: 1
+};
+
+const g = 10;
+const MARGIN = 60;
+const GROUND_Y = 420;
+const PLANE_LENGTH = 600;
+
+function rad(deg) { return deg * Math.PI / 180; }
+
+function computePhysics() {
+  const th = rad(state.angle);
+  const sin = Math.sin(th);
+  const cos = Math.cos(th);
+  const N = state.mass * g * cos;
+  const P = state.mass * g;
+  const Px = state.mass * g * sin;
+  const Py = state.mass * g * cos;
+  const fatMax = state.mu * N;
+
+  let a;
+  if (state.mu === 0) {
+    a = g * sin;
+    state.dir = 1;
+  } else {
+    if (state.playing && state.v > 0.01) {
+      a = -g * (sin + state.mu * cos);
+      state.dir = -1;
+    } else if (state.playing && state.v < -0.01) {
+      a = g * (sin - state.mu * cos);
+      state.dir = 1;
+    } else {
+      if (sin > state.mu * cos) {
+        a = g * (sin - state.mu * cos);
+        state.dir = 1;
+      } else {
+        a = 0;
+        state.dir = 0;
+      }
+    }
+  }
+  return { N, P, Px, Py, fatMax, a, sin, cos };
+}
+
+function planeToCanvas(s, h) {
+  const th = rad(state.angle);
+  const originX = MARGIN;
+  const originY = GROUND_Y;
+  const baseX = originX + s * Math.cos(th);
+  const baseY = originY - s * Math.sin(th);
+  const x = baseX - h * Math.sin(th);
+  const y = baseY - h * Math.cos(th);
+  return { x, y };
+}
+
+function drawArrow(x1, y1, x2, y2, color, label) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  if (len < 3) return;
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+  const angle = Math.atan2(dy, dx);
+  const headLen = 10;
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - headLen * Math.cos(angle - Math.PI / 7), y2 - headLen * Math.sin(angle - Math.PI / 7));
+  ctx.lineTo(x2 - headLen * Math.cos(angle + Math.PI / 7), y2 - headLen * Math.sin(angle + Math.PI / 7));
+  ctx.closePath();
+  ctx.fill();
+  if (label) {
+    ctx.font = 'bold 13px "Courier New", monospace';
+    ctx.fillText(label, x2 + 6, y2 + 4);
+  }
+}
+
+function drawScene() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const th = rad(state.angle);
+  const phys = computePhysics();
+
+  ctx.fillStyle = '#0a0d12';
+  ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
+  ctx.strokeStyle = '#30363d';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, GROUND_Y);
+  ctx.lineTo(canvas.width, GROUND_Y);
+  ctx.stroke();
+
+  const planeLen = PLANE_LENGTH;
+  const topX = MARGIN + planeLen * Math.cos(th);
+  const topY = GROUND_Y - planeLen * Math.sin(th);
+
+  const grad = ctx.createLinearGradient(MARGIN, GROUND_Y, topX, topY);
+  grad.addColorStop(0, '#1a1f29');
+  grad.addColorStop(1, '#232a36');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.moveTo(MARGIN, GROUND_Y);
+  ctx.lineTo(topX, topY);
+  ctx.lineTo(MARGIN, topY);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle = '#58a6ff';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(MARGIN, GROUND_Y);
+  ctx.lineTo(topX, topY);
+  ctx.stroke();
+
+  ctx.strokeStyle = '#30363d';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(MARGIN, GROUND_Y);
+  ctx.lineTo(MARGIN, topY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  if (state.angle > 2) {
+    ctx.strokeStyle = '#79c0ff';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    const arcRadius = 40;
+    ctx.arc(MARGIN, GROUND_Y, arcRadius, -th, 0);
+    ctx.stroke();
+    ctx.fillStyle = '#79c0ff';
+    ctx.font = '14px "Courier New", monospace';
+    ctx.fillText('θ = ' + state.angle + '°', MARGIN + 50, GROUND_Y - 12);
+  }
+
+  const boxSize = 40;
+  const boxDist = 100 + state.s;
+  const boxCenter = planeToCanvas(boxDist, boxSize / 2);
+
+  ctx.save();
+  ctx.translate(boxCenter.x, boxCenter.y);
+  ctx.rotate(-th);
+  ctx.fillStyle = '#e6edf3';
+  ctx.fillRect(-boxSize / 2, -boxSize / 2, boxSize, boxSize);
+  ctx.strokeStyle = '#30363d';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(-boxSize / 2, -boxSize / 2, boxSize, boxSize);
+  ctx.restore();
+
+  const scale = 4;
+  const cx = boxCenter.x, cy = boxCenter.y;
+
+  drawArrow(cx, cy, cx, cy + phys.P * scale, '#f85149', 'P');
+
+  const nEnd = { x: cx - phys.N * scale * Math.sin(th), y: cy - phys.N * scale * Math.cos(th) };
+  drawArrow(cx, cy, nEnd.x, nEnd.y, '#3fb950', 'N');
+
+  const pxEnd = { x: cx - phys.Px * scale * Math.cos(th), y: cy + phys.Px * scale * Math.sin(th) };
+  drawArrow(cx, cy, pxEnd.x, pxEnd.y, '#a371f7', 'Px');
+
+  const pyEnd = { x: cx + phys.Py * scale * Math.sin(th), y: cy + phys.Py * scale * Math.cos(th) };
+  drawArrow(cx, cy, pyEnd.x, pyEnd.y, '#a371f7', 'Py');
+
+  if (state.mu > 0 && phys.fatMax > 0.01) {
+    const fatDir = state.playing && state.v > 0.01 ? 1 : (state.playing && state.v < -0.01 ? -1 : 1);
+    const fatEnd = {
+      x: cx + fatDir * phys.fatMax * scale * Math.cos(th),
+      y: cy - fatDir * phys.fatMax * scale * Math.sin(th)
+    };
+    drawArrow(cx, cy, fatEnd.x, fatEnd.y, '#d29922', 'fat');
+  }
+
+  ctx.fillStyle = '#8b949e';
+  ctx.font = '12px -apple-system, sans-serif';
+  ctx.fillText('P = peso  |  N = normal  |  Px = componente paralela  |  Py = componente perpendicular  |  fat = atrito', 20, 24);
+  ctx.fillText('A escala dos vetores é proporcional à intensidade.', 20, 42);
+}
+
+function updateForceList() {
+  const phys = computePhysics();
+  const list = document.getElementById('forceList');
+  list.innerHTML = `
+    <div class="force-item">
+      <div class="color" style="background:#f85149"></div>
+      <div class="name">Peso (P = m·g)</div>
+      <div class="value">${phys.P.toFixed(2)} N</div>
+    </div>
+    <div class="force-item">
+      <div class="color" style="background:#3fb950"></div>
+      <div class="name">Normal (N = m·g·cos θ)</div>
+      <div class="value">${phys.N.toFixed(2)} N</div>
+    </div>
+    <div class="force-item">
+      <div class="color" style="background:#a371f7"></div>
+      <div class="name">Componente paralela (Px = m·g·sen θ)</div>
+      <div class="value">${phys.Px.toFixed(2)} N</div>
+    </div>
+    <div class="force-item">
+      <div class="color" style="background:#a371f7"></div>
+      <div class="name">Componente perpendicular (Py = m·g·cos θ)</div>
+      <div class="value">${phys.Py.toFixed(2)} N</div>
+    </div>
+    <div class="force-item">
+      <div class="color" style="background:#d29922"></div>
+      <div class="name">Atrito máximo (fat = μ·N)</div>
+      <div class="value">${phys.fatMax.toFixed(2)} N</div>
+    </div>
+    <div class="force-item" style="background:#1f2733;">
+      <div class="color" style="background:#58a6ff"></div>
+      <div class="name">Aceleração resultante (a)</div>
+      <div class="value">${phys.a.toFixed(2)} m/s²</div>
+    </div>
+  `;
+
+  const sin = Math.sin(rad(state.angle)).toFixed(2);
+  const cos = Math.cos(rad(state.angle)).toFixed(2);
+  const tan = Math.tan(rad(state.angle)).toFixed(2);
+
+  if (state.mu === 0) {
+    document.getElementById('formulaA').innerHTML = `a = g · sen θ = 10 · ${sin} = ${phys.a.toFixed(2)} m/s²`;
+    document.getElementById('formulaDesc').textContent = 'Plano inclinado sem atrito.';
+  } else {
+    if (phys.a > 0) {
+      document.getElementById('formulaA').innerHTML = `a = g·(sen θ − μ·cos θ) = 10·(${sin} − ${state.mu}·${cos}) = ${phys.a.toFixed(2)} m/s²`;
+      document.getElementById('formulaDesc').textContent = 'Descida com atrito.';
+    } else if (phys.a < 0) {
+      document.getElementById('formulaA').innerHTML = `a = −g·(sen θ + μ·cos θ) = 10·(${sin} + ${state.mu}·${cos}) = ${phys.a.toFixed(2)} m/s²`;
+      document.getElementById('formulaDesc').textContent = 'Subida com atrito (desaceleração).';
+    } else {
+      document.getElementById('formulaA').innerHTML = `a = 0 (bloco parado)`;
+      document.getElementById('formulaDesc').textContent = `tan θ = ${tan} ≤ μ = ${state.mu}. O atrito segura o bloco.`;
+    }
+  }
+  document.getElementById('formulaN').innerHTML = `N = m·g·cos θ = ${state.mass}·10·${cos} = ${phys.N.toFixed(2)} N`;
+  document.getElementById('formulaFat').innerHTML = `f<sub>at</sub> = μ·N = ${state.mu}·${phys.N.toFixed(2)} = ${phys.fatMax.toFixed(2)} N`;
+}
+
+function updateLabels() {
+  document.getElementById('angleVal').textContent = state.angle + '°';
+  document.getElementById('massVal').textContent = state.mass.toFixed(1).replace('.', ',') + ' kg';
+  document.getElementById('muVal').textContent = state.mu.toFixed(2).replace('.', ',');
+  document.getElementById('v0Val').textContent = state.v0.toFixed(1).replace('.', ',') + ' m/s';
+}
+
+function loop(timestamp) {
+  if (!state.playing) return;
+  if (!state.lastTime) state.lastTime = timestamp;
+  const dt = Math.min((timestamp - state.lastTime) / 1000, 0.05);
+  state.lastTime = timestamp;
+
+  const phys = computePhysics();
+  state.v += phys.a * dt;
+  state.s += state.v * dt;
+
+  if (state.s < -80) { state.s = -80; state.v = 0; state.playing = false; status.textContent = 'Bloco chegou ao topo.'; }
+  if (state.s > 350) { state.s = 350; state.v = 0; state.playing = false; status.textContent = 'Bloco chegou à base.'; }
+  if (state.mu > 0 && Math.abs(state.v) < 0.05 && phys.a !== 0) { state.v = 0; state.playing = false; status.textContent = 'Bloco parou (atrito venceu).'; }
+
+  status.textContent = `t = ${state.t.toFixed(2)}s  |  s = ${(state.s + 100).toFixed(1)} cm  |  v = ${state.v.toFixed(2)} m/s`;
+  state.t += dt;
+  drawScene();
+  updateForceList();
+  if (state.playing) state.rafId = requestAnimationFrame(loop);
+}
+
+function play() {
+  state.playing = true; state.lastTime = 0; state.t = 0; state.s = 0; state.v = state.v0;
+  document.getElementById('playBtn').textContent = '⏸ Pausar';
+  status.textContent = 'Simulando...';
+  loop(performance.now());
+}
+
+function pause() {
+  state.playing = false;
+  if (state.rafId) cancelAnimationFrame(state.rafId);
+  document.getElementById('playBtn').textContent = '▶ Continuar';
+}
+
+function reset() {
+  state.playing = false;
+  if (state.rafId) cancelAnimationFrame(state.rafId);
+  state.t = 0; state.s = 0; state.v = 0; state.lastTime = 0;
+  document.getElementById('playBtn').textContent = '▶ Iniciar';
+  status.textContent = 'Pronto. Ajuste o ângulo ou inicie a simulação.';
+  drawScene(); updateForceList();
+}
+
+document.getElementById('angle').addEventListener('input', e => { state.angle = +e.target.value; reset(); updateLabels(); });
+document.getElementById('mass').addEventListener('input', e => { state.mass = +e.target.value; updateLabels(); updateForceList(); drawScene(); });
+document.getElementById('mu').addEventListener('input', e => { state.mu = +e.target.value; updateLabels(); updateForceList(); drawScene(); });
+document.getElementById('v0').addEventListener('input', e => { state.v0 = +e.target.value; updateLabels(); });
+document.getElementById('playBtn').addEventListener('click', () => { if (state.playing) pause(); else play(); });
+document.getElementById('resetBtn').addEventListener('click', reset);
+
+updateLabels();
+reset();
+</script>
+</body>
+</html>
